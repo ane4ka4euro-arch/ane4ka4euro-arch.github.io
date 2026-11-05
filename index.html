@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Тестирование по C# | Ученикам</title>
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons (для иконок) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         body {
@@ -22,7 +20,7 @@
             backdrop-filter: blur(6px);
             border-radius: 2rem;
             box-shadow: 0 25px 45px -12px rgba(0, 20, 30, 0.35);
-            padding: 2rem 2rem 2rem 2rem;
+            padding: 2rem;
             border: 1px solid rgba(255, 255, 255, 0.5);
         }
         .quiz-header {
@@ -94,14 +92,6 @@
             border-color: #2b4c8c;
             background: #e6edfe;
             box-shadow: 0 6px 12px -6px #2b4c8c55;
-        }
-        .option-item.correct-highlight {
-            border-color: #2e7d32;
-            background: #e8f5e9;
-        }
-        .option-item.wrong-highlight {
-            border-color: #c62828;
-            background: #ffebee;
         }
         .option-item input[type="radio"] {
             appearance: none;
@@ -221,15 +211,13 @@
             font-size: 0.85rem;
             color: #7a8ba8;
         }
-        .hidden {
-            display: none !important;
+        .hidden { display: none !important; }
+        
+        /* Лоадер */
+        .loader-container {
+            text-align: center;
+            padding: 3rem 0;
         }
-        .correct-icon, .wrong-icon {
-            margin-left: auto;
-            font-size: 1.4rem;
-        }
-        .correct-icon { color: #2e7d32; }
-        .wrong-icon { color: #c62828; }
     </style>
 </head>
 <body>
@@ -240,21 +228,33 @@
                 <i class="bi bi-code-square" style="color: #2b4c8c;"></i>
                 C# тест
             </h1>
-            <div class="question-counter" id="counterText">Вопрос 1 / 5</div>
+            <div class="question-counter" id="counterText">Загрузка...</div>
+        </div>
+
+        <!-- Поле для ввода имени -->
+        <div class="mb-4 hidden" id="nameInputContainer">
+            <label for="studentName" class="form-label fw-bold">Ваше имя и фамилия:</label>
+            <input type="text" class="form-control form-control-lg" id="studentName" placeholder="Введите имя перед началом теста" required>
         </div>
 
         <!-- Прогресс-бар -->
-        <div class="progress-wrapper">
-            <div class="progress-bar-custom" id="progressBar" style="width: 20%;"></div>
+        <div class="progress-wrapper hidden" id="progressWrapper">
+            <div class="progress-bar-custom" id="progressBar" style="width: 0%;"></div>
         </div>
 
-        <!-- Контейнер для динамического контента (вопросы или результаты) -->
+        <!-- Контейнер для контента -->
         <div id="quizContent">
-            <!-- Сюда будет вставлен вопрос через JS -->
+            <!-- Лоадер при загрузке -->
+            <div class="loader-container" id="loader">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+                <p class="mt-3 text-muted fw-bold">Загрузка вопросов из Google Таблицы...</p>
+            </div>
         </div>
 
-        <!-- Блок навигации (кнопки) -->
-        <div class="nav-buttons" id="navButtons">
+        <!-- Блок навигации -->
+        <div class="nav-buttons hidden" id="navButtons">
             <button class="btn btn-outline-custom btn-custom" id="prevBtn" disabled>
                 <i class="bi bi-arrow-left"></i> Назад
             </button>
@@ -263,13 +263,13 @@
             </button>
         </div>
 
-        <!-- Результат (скрыт изначально) -->
+        <!-- Результат -->
         <div id="resultScreen" class="result-screen hidden">
             <i class="bi bi-trophy-fill result-icon"></i>
             <h2 class="display-4">Тест завершён!</h2>
             <div class="score-badge mx-auto mb-3">
                 <i class="bi bi-check-circle-fill"></i>
-                <span id="finalScoreText">0 из 5</span>
+                <span id="finalScoreText">0 из 0</span>
             </div>
             <div class="feedback-message" id="feedbackMessage"></div>
             <button class="btn btn-success-custom btn-custom mt-4" id="restartBtn">
@@ -277,91 +277,144 @@
             </button>
         </div>
 
-        <!-- Подпись -->
         <div class="footer-note">
             <i class="bi bi-dot"></i> Тестирование по основам C# <i class="bi bi-dot"></i>
         </div>
     </div>
 
-    <!-- Bootstrap JS (опционально, не требуется для работы, но пусть будет) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
         (function() {
-            // ------------------------- Вопросы и ответы -------------------------
-            const questions = [
-                {
-                    question: "Какой тип данных в C# используется для хранения целых чисел?",
-                    options: ["int", "string", "bool", "double"],
-                    correct: 0 // индекс правильного ответа
-                },
-                {
-                    question: "Какой оператор используется для доступа к членам класса (полям, методам)?",
-                    options: [".", "->", "::", "=>"],
-                    correct: 0
-                },
-                {
-                    question: "Что означает ключевое слово 'static' в C#?",
-                    options: [
-                        "Член принадлежит типу, а не экземпляру",
-                        "Переменная только для чтения",
-                        "Метод нельзя переопределить",
-                        "Класс является абстрактным"
-                    ],
-                    correct: 0
-                },
-                {
-                    question: "Какой цикл гарантированно выполнится хотя бы один раз?",
-                    options: ["do-while", "while", "for", "foreach"],
-                    correct: 0
-                },
-                {
-                    question: "Что делает ключевое слово 'using' в C#?",
-                    options: [
-                        "Освобождает ресурсы после завершения блока",
-                        "Подключает пространство имён",
-                        "Создаёт псевдоним типа",
-                        "Всё вышеперечисленное"
-                    ],
-                    correct: 3
-                }
-            ];
+            // =========================================================
+            // 1. ВСТАВЬТЕ СЮДА ВАШУ ССЫЛКУ ИЗ GOOGLE APPS SCRIPT (на /exec)
+            // =========================================================
+            const SCRIPT_URL = 'ВАШ_URL_ИЗ_APPS_SCRIPT'; 
 
-            // ------------------------- Состояние -------------------------
-            let currentIndex = 0;                  // индекс текущего вопроса
-            let userAnswers = new Array(questions.length).fill(null); // выбранные ответы (индексы)
-            let quizCompleted = false;            // флаг завершения теста
+            // =========================================================
+            // 2. ССЫЛКА НА ВАШУ ОПУБЛИКОВАННУЮ ТАБЛИЦУ (TSV)
+            // =========================================================
+            const TSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3r7XpAt19TqGBBcFQLKMzSYXMj5KXcLWoyYmiKUEVS3pzw80hJM-0PYxid6QJs7ROqTyT7BhflyJR/pub?output=tsv';
+
+            // ------------------------- Переменные состояния -------------------------
+            let questions = [];
+            let currentIndex = 0;
+            let userAnswers = [];
+            let quizCompleted = false;
 
             // DOM элементы
             const quizContent = document.getElementById('quizContent');
+            const loader = document.getElementById('loader');
             const navButtons = document.getElementById('navButtons');
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
             const counterText = document.getElementById('counterText');
             const progressBar = document.getElementById('progressBar');
+            const progressWrapper = document.getElementById('progressWrapper');
             const resultScreen = document.getElementById('resultScreen');
             const finalScoreText = document.getElementById('finalScoreText');
             const feedbackMessage = document.getElementById('feedbackMessage');
             const restartBtn = document.getElementById('restartBtn');
+            const nameInputContainer = document.getElementById('nameInputContainer');
+            const studentNameInput = document.getElementById('studentName');
 
-            // ------------------------- Вспомогательные функции -------------------------
+            // ------------------------- Загрузка и парсинг TSV -------------------------
+            async function loadQuestionsFromSheet() {
+                try {
+                    const response = await fetch(TSV_URL);
+                    if (!response.ok) throw new Error('Ошибка сети');
+                    
+                    const text = await response.text();
+                    // Разбиваем на строки и убираем пустые
+                    const rows = text.split('\n').map(row => row.trim()).filter(row => row.length > 0);
+                    
+                    // Пропускаем заголовки (первую строку)
+                    const dataRows = rows.slice(1);
+                    
+                    questions = dataRows.map(row => {
+                        // Google TSV использует табуляцию как разделитель
+                        const cols = row.split('\t');
+                        return {
+                            id: cols[0] || '',
+                            theme: cols[1] || '',
+                            question: cols[2] || '',
+                            options: [cols[3] || '', cols[4] || '', cols[5] || '', cols[6] || ''],
+                            // В таблице номер правильного ответа от 1 до 4. 
+                            // Для JS нам нужен индекс от 0 до 3.
+                            correct: parseInt(cols[7], 10) - 1 
+                        };
+                    }).filter(q => q.question !== ''); // Убираем битые строки
+
+                    if (questions.length === 0) {
+                        throw new Error('Вопросы не найдены в таблице');
+                    }
+
+                    // Инициализация состояния под количество вопросов
+                    userAnswers = new Array(questions.length).fill(null);
+
+                    // Показываем интерфейс
+                    loader.classList.add('hidden');
+                    nameInputContainer.classList.remove('hidden');
+                    progressWrapper.classList.remove('hidden');
+                    
+                    renderQuestion();
+                    
+                } catch (error) {
+                    console.error('Ошибка загрузки вопросов:', error);
+                    loader.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <strong>Ошибка загрузки вопросов!</strong><br>
+                            Проверьте, что таблица опубликована в интернете (Файл -> Поделиться -> Опубликовать в интернете).
+                        </div>
+                    `;
+                }
+            }
+
+            // ------------------------- Отправка в Google Таблицу -------------------------
+            async function sendResultsToGoogle(name, score, answersArray) {
+                if (SCRIPT_URL === 'ВАШ_URL_ИЗ_APPS_SCRIPT') {
+                    console.warn('Ссылка на Apps Script не указана. Результаты не отправлены.');
+                    return;
+                }
+
+                const answersText = answersArray.map((ansIndex, qIndex) => {
+                    if (ansIndex === null) return 'Нет ответа';
+                    return questions[qIndex].options[ansIndex];
+                });
+
+                try {
+                    await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain' },
+                        body: JSON.stringify({
+                            studentName: name,
+                            score: score,
+                            answers: answersText
+                        }),
+                        mode: 'no-cors'
+                    });
+                    console.log('Данные отправлены!');
+                } catch (error) {
+                    console.error('Ошибка отправки:', error);
+                }
+            }
+
+            // ------------------------- Логика теста -------------------------
             function updateProgressAndCounter() {
                 const total = questions.length;
                 const answeredCount = userAnswers.filter(a => a !== null).length;
-                // Прогресс-бар показывает процент отвеченных вопросов (не текущий индекс)
                 const percent = (answeredCount / total) * 100;
                 progressBar.style.width = percent + '%';
-                counterText.textContent = `Вопрос ${currentIndex + 1} / ${total}`;
+                if (!quizCompleted && total > 0) {
+                    counterText.textContent = `Вопрос ${currentIndex + 1} / ${total}`;
+                }
             }
 
-            // Отрисовка текущего вопроса
             function renderQuestion() {
-                if (quizCompleted) return;
+                if (quizCompleted || questions.length === 0) return;
 
                 const q = questions[currentIndex];
-                const savedAnswer = userAnswers[currentIndex]; // может быть null
+                const savedAnswer = userAnswers[currentIndex];
 
-                // Формируем HTML для вариантов
                 let optionsHtml = '';
                 q.options.forEach((opt, idx) => {
                     const isSelected = (savedAnswer === idx);
@@ -374,54 +427,43 @@
                     `;
                 });
 
-                // Вставляем вопрос и варианты
                 quizContent.innerHTML = `
                     <div class="question-text">${q.question}</div>
-                    <div class="options-list" id="optionsContainer">
+                    <div class="options-list">
                         ${optionsHtml}
                     </div>
                 `;
 
-                // Навешиваем обработчики на варианты (клик по всей строке)
                 document.querySelectorAll('.option-item').forEach(container => {
                     container.addEventListener('click', (e) => {
-                        // Предотвращаем двойной вызов, если клик пришёлся на input
                         if (e.target.tagName === 'INPUT') return;
                         const radio = container.querySelector('input[type="radio"]');
                         if (radio) {
                             radio.checked = true;
-                            // Триггерим событие change вручную
                             radio.dispatchEvent(new Event('change', { bubbles: true }));
                         }
                     });
                 });
 
-                // Обработчик изменения радио-кнопок (для обновления состояния и стилей)
                 document.querySelectorAll('input[name="questionOption"]').forEach(radio => {
                     radio.addEventListener('change', (e) => {
                         const selectedIdx = parseInt(e.target.value, 10);
-                        // Сохраняем ответ
                         userAnswers[currentIndex] = selectedIdx;
-                        // Обновляем визуальное выделение
                         document.querySelectorAll('.option-item').forEach(opt => {
                             opt.classList.remove('selected');
                         });
                         e.target.closest('.option-item').classList.add('selected');
-                        // Обновляем прогресс (т.к. количество отвеченных могло измениться)
                         updateProgressAndCounter();
-                        // Разблокируем кнопку "Далее" / меняем на "Завершить" если это последний вопрос
                         updateNavButtons();
                     });
                 });
 
-                // Обновляем кнопки навигации
                 updateNavButtons();
                 updateProgressAndCounter();
             }
 
-            // Обновление состояния кнопок "Назад" и "Далее"/"Завершить"
             function updateNavButtons() {
-                if (quizCompleted) {
+                if (quizCompleted || questions.length === 0) {
                     navButtons.classList.add('hidden');
                     return;
                 } else {
@@ -430,44 +472,23 @@
 
                 const isFirst = currentIndex === 0;
                 const isLast = currentIndex === questions.length - 1;
-                const hasAnsweredCurrent = userAnswers[currentIndex] !== null;
                 const allAnswered = userAnswers.every(ans => ans !== null);
 
-                // Кнопка "Назад"
                 prevBtn.disabled = isFirst;
 
-                // Кнопка "Далее" / "Завершить"
                 if (isLast) {
-                    // На последнем вопросе кнопка называется "Завершить тест"
                     nextBtn.innerHTML = 'Завершить тест <i class="bi bi-flag-fill"></i>';
-                    // Разрешаем завершение только если все вопросы отвечены (или можно проверять только текущий? 
-                    // Для честности теста: лучше требовать ответы на все вопросы, но можно разрешить, если ответили на все.
-                    // Установим: если не все отвечены — блокируем.
                     nextBtn.disabled = !allAnswered;
                 } else {
                     nextBtn.innerHTML = 'Далее <i class="bi bi-arrow-right"></i>';
-                    // Кнопка "Далее" активна, если на текущий вопрос дан ответ (или всегда? Для удобства — всегда)
-                    // Но чтобы стимулировать отвечать, сделаем доступной всегда (можно перелистывать без ответа).
-                    // В классических тестах лучше разрешать пропускать? Но пользователь может вернуться.
-                    // Сделаем доступной всегда, но если не ответил, то ответ сохранится как null, и в конце будет 0.
-                    // Чтобы было удобнее, оставим всегда активной.
                     nextBtn.disabled = false;
-                }
-
-                // Если тест завершен, кнопки не показываем (обрабатывается в updateNavButtons), но на всякий случай скроем
-                if (quizCompleted) {
-                    navButtons.classList.add('hidden');
                 }
             }
 
-            // Переход к следующему вопросу
             function goToNext() {
                 if (quizCompleted) return;
-
                 const isLast = currentIndex === questions.length - 1;
-
                 if (isLast) {
-                    // Завершаем тест
                     finishQuiz();
                 } else {
                     currentIndex++;
@@ -475,7 +496,6 @@
                 }
             }
 
-            // Переход к предыдущему вопросу
             function goToPrev() {
                 if (currentIndex > 0) {
                     currentIndex--;
@@ -483,11 +503,8 @@
                 }
             }
 
-            // Завершение теста, подсчет результатов
             function finishQuiz() {
                 quizCompleted = true;
-
-                // Считаем правильные ответы
                 let correctCount = 0;
                 questions.forEach((q, idx) => {
                     if (userAnswers[idx] === q.correct) {
@@ -496,76 +513,57 @@
                 });
 
                 const total = questions.length;
+                const studentName = studentNameInput.value.trim() || 'Аноним';
+                
+                // Отправляем
+                sendResultsToGoogle(studentName, correctCount, userAnswers);
 
-                // Показываем экран результатов
+                // Показываем результат
                 quizContent.classList.add('hidden');
                 navButtons.classList.add('hidden');
+                nameInputContainer.classList.add('hidden');
                 resultScreen.classList.remove('hidden');
 
-                // Обновляем текст результата
                 finalScoreText.textContent = `${correctCount} из ${total}`;
 
-                // Формируем сообщение обратной связи
                 let feedback = '';
                 const percentage = (correctCount / total) * 100;
-                if (percentage === 100) {
-                    feedback = '🏆 Отлично! Все ответы верны. Вы знаете C# на высшем уровне!';
-                } else if (percentage >= 80) {
-                    feedback = '🌟 Хороший результат! Вы уверенно владеете основами C#.';
-                } else if (percentage >= 50) {
-                    feedback = '📘 Неплохо, но есть над чем поработать. Повторите некоторые темы.';
-                } else {
-                    feedback = '💡 Стоит уделить больше времени изучению C#. Рекомендуем повторить основы.';
-                }
+                if (percentage === 100) feedback = '🏆 Отлично! Все ответы верны.';
+                else if (percentage >= 80) feedback = '🌟 Хороший результат! Вы уверенно владеете основами.';
+                else if (percentage >= 50) feedback = '📘 Неплохо, но есть над чем поработать.';
+                else feedback = '💡 Стоит уделить больше времени изучению материала.';
+                
                 feedbackMessage.textContent = feedback;
-
-                // Прогресс-бар на всю ширину? Можно оставить как есть (показывает % отвеченных)
-                // Обновим прогресс до 100% отвеченных (уже так)
                 updateProgressAndCounter();
-                progressBar.style.width = '100%'; // визуально завершено
-
-                // Меняем заголовок счётчика на "Тест завершён"
+                progressBar.style.width = '100%';
                 counterText.textContent = `Тест завершён`;
             }
 
-            // Сброс теста (перезапуск)
             function resetQuiz() {
                 currentIndex = 0;
                 userAnswers = new Array(questions.length).fill(null);
                 quizCompleted = false;
 
-                // Показываем контент, скрываем результаты
                 quizContent.classList.remove('hidden');
                 resultScreen.classList.add('hidden');
                 navButtons.classList.remove('hidden');
+                nameInputContainer.classList.remove('hidden');
 
-                // Сбрасываем прогресс
                 progressBar.style.width = '0%';
                 updateProgressAndCounter();
-
-                // Перерисовываем вопрос
                 renderQuestion();
-
-                // Обновляем кнопки
                 updateNavButtons();
             }
 
-            // ------------------------- Инициализация и обработчики событий -------------------------
             function init() {
-                // Рендерим первый вопрос
-                renderQuestion();
-
-                // Обработчики кнопок
                 prevBtn.addEventListener('click', goToPrev);
                 nextBtn.addEventListener('click', goToNext);
                 restartBtn.addEventListener('click', resetQuiz);
-
-                // Первоначальная настройка кнопок и прогресса
-                updateNavButtons();
-                updateProgressAndCounter();
+                
+                // Начинаем загрузку вопросов из таблицы
+                loadQuestionsFromSheet();
             }
 
-            // Запуск после загрузки DOM
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', init);
             } else {
