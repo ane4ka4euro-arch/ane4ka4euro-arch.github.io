@@ -1,11 +1,577 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Тестирование по C# | Ученикам</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons (для иконок) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            background: linear-gradient(145deg, #f5f7fa 0%, #e9eef5 100%);
+            min-height: 100vh;
+            font-family: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            padding: 20px;
+        }
+        .quiz-container {
+            max-width: 820px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(6px);
+            border-radius: 2rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 20, 30, 0.35);
+            padding: 2rem 2rem 2rem 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .quiz-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+        .quiz-header h1 {
+            font-weight: 700;
+            font-size: 1.9rem;
+            color: #1e2a3a;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .progress-wrapper {
+            background: #e2e8f0;
+            border-radius: 40px;
+            height: 10px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .progress-bar-custom {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4b6cb7, #6a8dd8);
+            border-radius: 40px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 8px #4b6cb7;
+        }
+        .question-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #0b1a2b;
+            margin-bottom: 2rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid #cfdee9;
+            line-height: 1.4;
+        }
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 2rem;
+        }
+        .option-item {
+            background: white;
+            border-radius: 60px;
+            padding: 0.9rem 1.5rem;
+            border: 2px solid #d8e1ec;
+            transition: all 0.15s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #1e2e42;
+            box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+        }
+        .option-item:hover {
+            border-color: #6a8dd8;
+            background: #f0f5ff;
+            transform: scale(1.01);
+        }
+        .option-item.selected {
+            border-color: #2b4c8c;
+            background: #e6edfe;
+            box-shadow: 0 6px 12px -6px #2b4c8c55;
+        }
+        .option-item.correct-highlight {
+            border-color: #2e7d32;
+            background: #e8f5e9;
+        }
+        .option-item.wrong-highlight {
+            border-color: #c62828;
+            background: #ffebee;
+        }
+        .option-item input[type="radio"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border: 2px solid #b0c4de;
+            border-radius: 50%;
+            margin-right: 18px;
+            position: relative;
+            transition: 0.1s;
+            flex-shrink: 0;
+        }
+        .option-item input[type="radio"]:checked {
+            border-color: #2b4c8c;
+            background-color: #2b4c8c;
+            box-shadow: inset 0 0 0 4px white;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.2rem;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .btn-custom {
+            border-radius: 40px;
+            padding: 0.7rem 2rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            transition: 0.15s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary-custom {
+            background: #2b4c8c;
+            color: white;
+            box-shadow: 0 8px 16px -6px #2b4c8c;
+        }
+        .btn-primary-custom:hover:not(:disabled) {
+            background: #1e3a6b;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px -8px #1e3a6b;
+        }
+        .btn-outline-custom {
+            background: transparent;
+            border: 2px solid #b8c9e0;
+            color: #1e2e42;
+        }
+        .btn-outline-custom:hover:not(:disabled) {
+            background: #e2eaf8;
+            border-color: #8aa1c4;
+        }
+        .btn-success-custom {
+            background: #2e7d32;
+            color: white;
+            box-shadow: 0 8px 16px -6px #2e7d32;
+        }
+        .btn-success-custom:hover {
+            background: #1e5e22;
+            transform: translateY(-2px);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            transform: none !important;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        .question-counter {
+            font-weight: 600;
+            color: #4d627c;
+            background: #e9eff7;
+            padding: 0.4rem 1.2rem;
+            border-radius: 40px;
+            font-size: 0.95rem;
+        }
+        .score-badge {
+            background: #0f2b4b;
+            color: white;
+            border-radius: 40px;
+            padding: 0.6rem 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+        }
+        .result-screen {
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+        .result-screen .display-4 {
+            color: #1e3a6b;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .result-icon {
+            font-size: 4rem;
+            color: #2b4c8c;
+            margin-bottom: 1rem;
+        }
+        .feedback-message {
+            font-size: 1.2rem;
+            color: #304a6e;
+            background: #e5edfa;
+            border-radius: 60px;
+            padding: 1rem 2rem;
+            display: inline-block;
+            margin: 1rem 0;
+        }
+        .footer-note {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.85rem;
+            color: #7a8ba8;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .correct-icon, .wrong-icon {
+            margin-left: auto;
+            font-size: 1.4rem;
+        }
+        .correct-icon { color: #2e7d32; }
+        .wrong-icon { color: #c62828; }
+    </style>
 </head>
 <body>
-    Рузавина А. М.
+    <div class="quiz-container">
+        <!-- Заголовок -->
+        <div class="quiz-header">
+            <h1>
+                <i class="bi bi-code-square" style="color: #2b4c8c;"></i>
+                C# тест
+            </h1>
+            <div class="question-counter" id="counterText">Вопрос 1 / 5</div>
+        </div>
+
+        <!-- Прогресс-бар -->
+        <div class="progress-wrapper">
+            <div class="progress-bar-custom" id="progressBar" style="width: 20%;"></div>
+        </div>
+
+        <!-- Контейнер для динамического контента (вопросы или результаты) -->
+        <div id="quizContent">
+            <!-- Сюда будет вставлен вопрос через JS -->
+        </div>
+
+        <!-- Блок навигации (кнопки) -->
+        <div class="nav-buttons" id="navButtons">
+            <button class="btn btn-outline-custom btn-custom" id="prevBtn" disabled>
+                <i class="bi bi-arrow-left"></i> Назад
+            </button>
+            <button class="btn btn-primary-custom btn-custom" id="nextBtn">
+                Далее <i class="bi bi-arrow-right"></i>
+            </button>
+        </div>
+
+        <!-- Результат (скрыт изначально) -->
+        <div id="resultScreen" class="result-screen hidden">
+            <i class="bi bi-trophy-fill result-icon"></i>
+            <h2 class="display-4">Тест завершён!</h2>
+            <div class="score-badge mx-auto mb-3">
+                <i class="bi bi-check-circle-fill"></i>
+                <span id="finalScoreText">0 из 5</span>
+            </div>
+            <div class="feedback-message" id="feedbackMessage"></div>
+            <button class="btn btn-success-custom btn-custom mt-4" id="restartBtn">
+                <i class="bi bi-arrow-repeat"></i> Пройти заново
+            </button>
+        </div>
+
+        <!-- Подпись -->
+        <div class="footer-note">
+            <i class="bi bi-dot"></i> Тестирование по основам C# <i class="bi bi-dot"></i>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS (опционально, не требуется для работы, но пусть будет) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        (function() {
+            // ------------------------- Вопросы и ответы -------------------------
+            const questions = [
+                {
+                    question: "Какой тип данных в C# используется для хранения целых чисел?",
+                    options: ["int", "string", "bool", "double"],
+                    correct: 0 // индекс правильного ответа
+                },
+                {
+                    question: "Какой оператор используется для доступа к членам класса (полям, методам)?",
+                    options: [".", "->", "::", "=>"],
+                    correct: 0
+                },
+                {
+                    question: "Что означает ключевое слово 'static' в C#?",
+                    options: [
+                        "Член принадлежит типу, а не экземпляру",
+                        "Переменная только для чтения",
+                        "Метод нельзя переопределить",
+                        "Класс является абстрактным"
+                    ],
+                    correct: 0
+                },
+                {
+                    question: "Какой цикл гарантированно выполнится хотя бы один раз?",
+                    options: ["do-while", "while", "for", "foreach"],
+                    correct: 0
+                },
+                {
+                    question: "Что делает ключевое слово 'using' в C#?",
+                    options: [
+                        "Освобождает ресурсы после завершения блока",
+                        "Подключает пространство имён",
+                        "Создаёт псевдоним типа",
+                        "Всё вышеперечисленное"
+                    ],
+                    correct: 3
+                }
+            ];
+
+            // ------------------------- Состояние -------------------------
+            let currentIndex = 0;                  // индекс текущего вопроса
+            let userAnswers = new Array(questions.length).fill(null); // выбранные ответы (индексы)
+            let quizCompleted = false;            // флаг завершения теста
+
+            // DOM элементы
+            const quizContent = document.getElementById('quizContent');
+            const navButtons = document.getElementById('navButtons');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const counterText = document.getElementById('counterText');
+            const progressBar = document.getElementById('progressBar');
+            const resultScreen = document.getElementById('resultScreen');
+            const finalScoreText = document.getElementById('finalScoreText');
+            const feedbackMessage = document.getElementById('feedbackMessage');
+            const restartBtn = document.getElementById('restartBtn');
+
+            // ------------------------- Вспомогательные функции -------------------------
+            function updateProgressAndCounter() {
+                const total = questions.length;
+                const answeredCount = userAnswers.filter(a => a !== null).length;
+                // Прогресс-бар показывает процент отвеченных вопросов (не текущий индекс)
+                const percent = (answeredCount / total) * 100;
+                progressBar.style.width = percent + '%';
+                counterText.textContent = `Вопрос ${currentIndex + 1} / ${total}`;
+            }
+
+            // Отрисовка текущего вопроса
+            function renderQuestion() {
+                if (quizCompleted) return;
+
+                const q = questions[currentIndex];
+                const savedAnswer = userAnswers[currentIndex]; // может быть null
+
+                // Формируем HTML для вариантов
+                let optionsHtml = '';
+                q.options.forEach((opt, idx) => {
+                    const isSelected = (savedAnswer === idx);
+                    const selectedClass = isSelected ? 'selected' : '';
+                    optionsHtml += `
+                        <div class="option-item ${selectedClass}" data-option-index="${idx}">
+                            <input type="radio" name="questionOption" value="${idx}" id="opt_${idx}" ${isSelected ? 'checked' : ''}>
+                            <label for="opt_${idx}" class="w-100" style="cursor: pointer; margin-bottom: 0;">${opt}</label>
+                        </div>
+                    `;
+                });
+
+                // Вставляем вопрос и варианты
+                quizContent.innerHTML = `
+                    <div class="question-text">${q.question}</div>
+                    <div class="options-list" id="optionsContainer">
+                        ${optionsHtml}
+                    </div>
+                `;
+
+                // Навешиваем обработчики на варианты (клик по всей строке)
+                document.querySelectorAll('.option-item').forEach(container => {
+                    container.addEventListener('click', (e) => {
+                        // Предотвращаем двойной вызов, если клик пришёлся на input
+                        if (e.target.tagName === 'INPUT') return;
+                        const radio = container.querySelector('input[type="radio"]');
+                        if (radio) {
+                            radio.checked = true;
+                            // Триггерим событие change вручную
+                            radio.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    });
+                });
+
+                // Обработчик изменения радио-кнопок (для обновления состояния и стилей)
+                document.querySelectorAll('input[name="questionOption"]').forEach(radio => {
+                    radio.addEventListener('change', (e) => {
+                        const selectedIdx = parseInt(e.target.value, 10);
+                        // Сохраняем ответ
+                        userAnswers[currentIndex] = selectedIdx;
+                        // Обновляем визуальное выделение
+                        document.querySelectorAll('.option-item').forEach(opt => {
+                            opt.classList.remove('selected');
+                        });
+                        e.target.closest('.option-item').classList.add('selected');
+                        // Обновляем прогресс (т.к. количество отвеченных могло измениться)
+                        updateProgressAndCounter();
+                        // Разблокируем кнопку "Далее" / меняем на "Завершить" если это последний вопрос
+                        updateNavButtons();
+                    });
+                });
+
+                // Обновляем кнопки навигации
+                updateNavButtons();
+                updateProgressAndCounter();
+            }
+
+            // Обновление состояния кнопок "Назад" и "Далее"/"Завершить"
+            function updateNavButtons() {
+                if (quizCompleted) {
+                    navButtons.classList.add('hidden');
+                    return;
+                } else {
+                    navButtons.classList.remove('hidden');
+                }
+
+                const isFirst = currentIndex === 0;
+                const isLast = currentIndex === questions.length - 1;
+                const hasAnsweredCurrent = userAnswers[currentIndex] !== null;
+                const allAnswered = userAnswers.every(ans => ans !== null);
+
+                // Кнопка "Назад"
+                prevBtn.disabled = isFirst;
+
+                // Кнопка "Далее" / "Завершить"
+                if (isLast) {
+                    // На последнем вопросе кнопка называется "Завершить тест"
+                    nextBtn.innerHTML = 'Завершить тест <i class="bi bi-flag-fill"></i>';
+                    // Разрешаем завершение только если все вопросы отвечены (или можно проверять только текущий? 
+                    // Для честности теста: лучше требовать ответы на все вопросы, но можно разрешить, если ответили на все.
+                    // Установим: если не все отвечены — блокируем.
+                    nextBtn.disabled = !allAnswered;
+                } else {
+                    nextBtn.innerHTML = 'Далее <i class="bi bi-arrow-right"></i>';
+                    // Кнопка "Далее" активна, если на текущий вопрос дан ответ (или всегда? Для удобства — всегда)
+                    // Но чтобы стимулировать отвечать, сделаем доступной всегда (можно перелистывать без ответа).
+                    // В классических тестах лучше разрешать пропускать? Но пользователь может вернуться.
+                    // Сделаем доступной всегда, но если не ответил, то ответ сохранится как null, и в конце будет 0.
+                    // Чтобы было удобнее, оставим всегда активной.
+                    nextBtn.disabled = false;
+                }
+
+                // Если тест завершен, кнопки не показываем (обрабатывается в updateNavButtons), но на всякий случай скроем
+                if (quizCompleted) {
+                    navButtons.classList.add('hidden');
+                }
+            }
+
+            // Переход к следующему вопросу
+            function goToNext() {
+                if (quizCompleted) return;
+
+                const isLast = currentIndex === questions.length - 1;
+
+                if (isLast) {
+                    // Завершаем тест
+                    finishQuiz();
+                } else {
+                    currentIndex++;
+                    renderQuestion();
+                }
+            }
+
+            // Переход к предыдущему вопросу
+            function goToPrev() {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    renderQuestion();
+                }
+            }
+
+            // Завершение теста, подсчет результатов
+            function finishQuiz() {
+                quizCompleted = true;
+
+                // Считаем правильные ответы
+                let correctCount = 0;
+                questions.forEach((q, idx) => {
+                    if (userAnswers[idx] === q.correct) {
+                        correctCount++;
+                    }
+                });
+
+                const total = questions.length;
+
+                // Показываем экран результатов
+                quizContent.classList.add('hidden');
+                navButtons.classList.add('hidden');
+                resultScreen.classList.remove('hidden');
+
+                // Обновляем текст результата
+                finalScoreText.textContent = `${correctCount} из ${total}`;
+
+                // Формируем сообщение обратной связи
+                let feedback = '';
+                const percentage = (correctCount / total) * 100;
+                if (percentage === 100) {
+                    feedback = '🏆 Отлично! Все ответы верны. Вы знаете C# на высшем уровне!';
+                } else if (percentage >= 80) {
+                    feedback = '🌟 Хороший результат! Вы уверенно владеете основами C#.';
+                } else if (percentage >= 50) {
+                    feedback = '📘 Неплохо, но есть над чем поработать. Повторите некоторые темы.';
+                } else {
+                    feedback = '💡 Стоит уделить больше времени изучению C#. Рекомендуем повторить основы.';
+                }
+                feedbackMessage.textContent = feedback;
+
+                // Прогресс-бар на всю ширину? Можно оставить как есть (показывает % отвеченных)
+                // Обновим прогресс до 100% отвеченных (уже так)
+                updateProgressAndCounter();
+                progressBar.style.width = '100%'; // визуально завершено
+
+                // Меняем заголовок счётчика на "Тест завершён"
+                counterText.textContent = `Тест завершён`;
+            }
+
+            // Сброс теста (перезапуск)
+            function resetQuiz() {
+                currentIndex = 0;
+                userAnswers = new Array(questions.length).fill(null);
+                quizCompleted = false;
+
+                // Показываем контент, скрываем результаты
+                quizContent.classList.remove('hidden');
+                resultScreen.classList.add('hidden');
+                navButtons.classList.remove('hidden');
+
+                // Сбрасываем прогресс
+                progressBar.style.width = '0%';
+                updateProgressAndCounter();
+
+                // Перерисовываем вопрос
+                renderQuestion();
+
+                // Обновляем кнопки
+                updateNavButtons();
+            }
+
+            // ------------------------- Инициализация и обработчики событий -------------------------
+            function init() {
+                // Рендерим первый вопрос
+                renderQuestion();
+
+                // Обработчики кнопок
+                prevBtn.addEventListener('click', goToPrev);
+                nextBtn.addEventListener('click', goToNext);
+                restartBtn.addEventListener('click', resetQuiz);
+
+                // Первоначальная настройка кнопок и прогресса
+                updateNavButtons();
+                updateProgressAndCounter();
+            }
+
+            // Запуск после загрузки DOM
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+        })();
+    </script>
 </body>
 </html>
